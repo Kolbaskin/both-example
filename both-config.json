@@ -1,0 +1,6 @@
+{
+    "protected": "protected",
+    "public": "public",
+    "shared": "shared",
+    "mask": "\\.mjs"
+}
