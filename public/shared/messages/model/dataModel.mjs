@@ -5,33 +5,29 @@ export default class dataModel extends Base {  __getFilePath__() {return "messag
     //
     constructor(attr) {
         attr.data = {
-            message: 'Hello Vue!'
+            msg: '',
+            messages: []
         }
-        super(attr)  
-        
-        this.on('test', (data) => {
-            console.log('ON test:', data)
+        super(attr);
+        // подписываемся на новые сообщения        
+        this.on('newmessage', (data) => {
+            this.messages.push(data)
         })
-
-        setTimeout(async ()=>{
-            const res = await this.$testServer(1,2,3)
-            console.log('RES:', res)
-        },1000)      
     }
 
-    reverseMessage () {
-        this.message = this.message.split('').reverse().join('')
+    //отправляем сообщение на сервер
+    async sendMessage(e) {
+        await this.$sendMessage(this.msg);
+        this.msg = '';
     }
-
-    setMessage(msg) {
-        this.message = msg
-    }
-
+    
     //
 
 
 
-async $testServer() {return await this.__runSharedFunction("$testServer",arguments)}
 
+
+
+async $sendMessage() {return await this.__runSharedFunction("$sendMessage",arguments)}
 
 }

@@ -15,23 +15,19 @@ export default class dataModel extends Base {  __getFilePath__() {return "messag
 
 
 
-
-
-
-
-    reverseMessage () {
-        this.message = this.message.split('').reverse().join('')
+    //отправляем сообщение на сервер
+    async sendMessage(e) {
+        await this.$sendMessage(this.msg);
+        this.msg = '';
     }
-
-    setMessage(msg) {
-        this.message = msg
-    }
-
+    
     //
-    async $testServer(a,b,c) {
-        console.log('server method:', {a,b,c})
-        this.fireEvent('test', 'all', new Date())
-        return {a,b,c}
+    async $sendMessage(text) {
+        // генерируем событие newmessage для всех подключенных пользователей
+        this.fireEvent('newmessage', 'all', {
+            date: new Date(),
+            text
+        })
+        return true;
     }
-
 }

@@ -16,18 +16,19 @@ setInterval(() => {
 
 let connections = {}
 
-let addWsConnection = (token, ws, req) => {
+let addWsConnection = (data, ws, req) => {
   
-    if(connections[token]) {
+    if(connections[data.token]) {
         ws.send('Error! This agent is already connected.')
         ws.close();
         return;
     }
 
-    connections[token] = new wsClient({
+    connections[data.token] = new wsClient({
         ws,
         req,
-        token,
+        token: data.token,
+        user: data.user,
         connections
     });
 }
@@ -42,9 +43,6 @@ queue.process(`inst:${sessionKey}`, (job, done) => {
 export default function(app) {
     expressWs(app);
     app.ws('/both', function(ws, req) { 
- 
-        console.log('connected:', req.query)
-        
-        addWsConnection(req.query.token, ws, req);        
+        addWsConnection(req.query, ws, req);        
     });
 }

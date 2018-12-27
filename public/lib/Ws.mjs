@@ -19,7 +19,7 @@ export default class WSocket {
     }
 
     connect() {
-        this.ws = new WebSocket(this.getUrl(this.token));
+        this.ws = new WebSocket(this.getUrl(this.token, this.user));
         
         this.ws.onopen = () => {
         
@@ -108,11 +108,11 @@ export default class WSocket {
         this.ws.send(JSON.stringify(data))
     }
 
-    getUrl(token) {
+    getUrl(token, user) {
         const uriArr = location.href.split('/')
             ,host = uriArr[2]
             ,protocole = uriArr[0] == 'https:'? 'wss':'ws';  
-        return protocole + "://" + host + "/both?token=" + encodeURIComponent(token)+'&user='+encodeURIComponent(this.user);
+        return protocole + "://" + host + "/both?token=" + encodeURIComponent(token)+'&user='+encodeURIComponent(user);
     }
 
     doResponse(data) {

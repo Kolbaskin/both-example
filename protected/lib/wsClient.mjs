@@ -1,21 +1,22 @@
+// Для каждого WS коннекта заводим отдельный инстанс
+// этого класса
+
 import Base from "./Base.mjs";
 import MemStorage from "./MemStorage.mjs";
 import Queue from "./Queue.mjs";
+import clsUsers from "../shared/users/model/dataModel.mjs";
+
+const Users = new clsUsers()
 
 export default class WsClient extends Base {
 
-    
-
-    //,mixins: ['Core.MemStorage', 'Core.Queue']
-
     constructor(cfg) {         
         super();
-
         this.apiVersion = '0.1.0';
-
         this.ws = cfg.ws;
         this.req = cfg.req;
         this.token = cfg.token;
+        this.user = cfg.user;
 
         this.connections = cfg.connections;
 
@@ -23,23 +24,14 @@ export default class WsClient extends Base {
         this.ws.on('message', (msg) => {
             this.onMessage(msg);
         })
-
         this.ws.on('close', () => {
             this.onClose();
         })
     }
 
-    async onStart() {
-        await MemStorage.setMemKey(`client:${this.token}`, "1");
-        await Queue.queueProcess(`client:${this.token}`, async (data, done) => {
-            const res = await this.prepareClientEvents(data);
-            done(res);
-        })
-    }
-
+    // читаем сообщения из сокета
     onMessage(msg) {
-        let data;
-          
+        let data;          
         try {
             data =JSON.parse(msg);
         } catch(e) {
@@ -49,6 +41,7 @@ export default class WsClient extends Base {
         this.checkInputData(data);
     }
 
+    // обработка входных данных
     checkInputData(data) {
         if(data && data.header) {
             if(!this.checkVersion(data.header)) 
@@ -62,14 +55,13 @@ export default class WsClient extends Base {
             this.error('Invalid input data.');
         }
     }
-
+    // Запускаем серверные методы моделей
     async runClassMethod(data) {
         const cls = await this.importCls(data.header.class, {
             wsClient: this
         })
         const method = (data.header.method[0] == '$'? '':'$') + data.header.method;
-        if(cls) {
-           
+        if(cls) {           
             if(!!cls[method]) {
                 // request
                 if(data.header.id) {
@@ -93,20 +85,18 @@ export default class WsClient extends Base {
         }
     }
 
+    // импортируем модуль
     async importCls(className, data) {
         let module;
-
         try {
             module = await import(`../shared/${className}`);
         } catch(e) {
             console.log('class err!', e)
             return null;
         }
-
-
         return new module.default(data);
     }
-
+    // отправляем ответы в сокет
     sendResponse(id, status, data) {
         this.send({
             header: {
@@ -117,7 +107,24 @@ export default class WsClient extends Base {
         })
     }
 
+    // на старте соединения
+    async onStart() {
+        // генерируем событие adduser для всех пользовательских моделей 
+        Users.fireEvent('adduser', {id:this.token, name: this.user})
+        // заводим учетку в редисе
+        await MemStorage.setMemKey(`client:${this.token}`, this.user);
+        // подписываемся на задачи в очереди для этого коннекта
+        await Queue.queueProcess(`client:${this.token}`, async (data, done) => {
+            // по задачам из очереди генерируем события
+            const res = await this.prepareClientEvents(data);
+            done(res);
+        })
+    }
+    // закрытие коннекта
     onClose() {
+        // генерируем событие removeuser для всех пользовательских моделей
+        Users.fireEvent('removeuser', {id:this.token, user: this.user})
+        // убираем учетку из редиса
         MemStorage.delMemKey(`client:${this.token}`);
         delete this.connections[this.token];
     }

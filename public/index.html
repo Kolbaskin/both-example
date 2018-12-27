@@ -12,10 +12,23 @@
 
   </head>
   <body>
-<h1>Test</h1>
+    <h1>Messanger</h1>
+    <div id="statusline">Status {{status}}</div>
+    
 
-<div id="app">
-        {{ message }}
-      </div>
-    </body>
+    <ul id="users">
+      <li v-for="user in users"> {{ user.name }} ({{user.id}}) </li>
+    </ul>
+
+    <div id="messages">
+      <div>
+          <input type="text" v-model="msg" />
+          <button v-on:click="sendMessage()">Отправить</button>
+        </div>
+      <ul>
+        <li v-for="message in messages">[{{ message.date }}] <strong>{{ message.text }}</strong></li>
+      </ul>
+    </div>
+
+  </body>
 </html>
